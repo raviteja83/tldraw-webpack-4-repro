@@ -1,11 +1,12 @@
-const autoprefixer = require("autoprefixer");
+// const autoprefixer = require("autoprefixer");
 const path = require("path");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const CaseSensitivePathsPlugin = require("case-sensitive-paths-webpack-plugin");
-const InterpolateHtmlPlugin = require("react-dev-utils/InterpolateHtmlPlugin");
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+// const CaseSensitivePathsPlugin = require("case-sensitive-paths-webpack-plugin");
+// const InterpolateHtmlPlugin = require("react-dev-utils/InterpolateHtmlPlugin");
 const WatchMissingNodeModulesPlugin = require("react-dev-utils/WatchMissingNodeModulesPlugin");
-// const eslintFormatter = require("react-dev-utils/eslintFormatter");
+const eslintFormatter = require("react-dev-utils/eslintFormatter");
 const ModuleScopePlugin = require("react-dev-utils/ModuleScopePlugin");
 
 // Webpack uses `publicPath` to determine where the app is being served from.
@@ -41,7 +42,7 @@ module.exports = {
     // the line below with these two lines if you prefer the stock client:
     // require.resolve('webpack-dev-server/client') + '?/',
     // require.resolve('webpack/hot/dev-server'),
-    require.resolve("react-dev-utils/webpackHotDevClient"),
+    // require.resolve("react-dev-utils/webpackHotDevClient"),
     // Finally, this is your app's code:
     "./src/index.js",
     // We include the app code last so that if there is a runtime error during
@@ -49,41 +50,51 @@ module.exports = {
     // changing JS code would still trigger a refresh.
   ],
   output: {
-    // Add /* filename */ comments to generated require()s in the output.
-    pathinfo: true,
-    // This does not produce a real file. It's just the virtual path that is
-    // served by WebpackDevServer in development. This is the JS bundle
-    // containing code from all our entry points, and the Webpack runtime.
-    filename: "static/js/bundle.js",
-    // There are also additional JS chunk files if you use code splitting.
-    chunkFilename: "static/js/[name].chunk.js",
-    // This is the URL that app is served from. We use "/" in development.
-    publicPath: publicPath,
-    // Point sourcemap entries to original disk location (format as URL on Windows)
-    devtoolModuleFilenameTemplate: (info) =>
-      path.resolve(info.absoluteResourcePath).replace(/\\/g, "/"),
+    path: path.resolve(__dirname, './build'),
+    filename: 'static/js/[name].[chunkhash:8].js',
+    assetModuleFilename: 'static/media/[name].[hash][ext]',
+    publicPath: '/',
+    clean: true,
+    devtoolModuleFilenameTemplate: info => {
+      return path
+        .relative(path.resolve(__dirname, 'src'), info.absoluteResourcePath)
+        .replace(/\\/g, '/');
+    },
   },
   resolve: {
     // This allows you to set a fallback for where Webpack should look for modules.
     // We placed these paths second because we want `node_modules` to "win"
     // if there are any conflicts. This matches Node resolution mechanism.
     // https://github.com/facebookincubator/create-react-app/issues/253
-    modules: ["node_modules"].concat(
-      // It is guaranteed to exist because we tweak it in `env.js`
-      (process.env.NODE_PATH || "").split(path.delimiter).filter(Boolean)
-    ),
+    // modules: ["node_modules"].concat(
+    //   // It is guaranteed to exist because we tweak it in `env.js`
+    //   (process.env.NODE_PATH || "").split(path.delimiter).filter(Boolean)
+    // ),
     // These are the reasonable defaults supported by the Node ecosystem.
     // We also include JSX as a common component filename extension to support
     // some tools, although we do not recommend using it, see:
     // https://github.com/facebookincubator/create-react-app/issues/290
     // `web` extension prefixes have been added for better support
     // for React Native Web.
-    extensions: [".web.js", ".mjs", ".js", ".json", ".web.jsx", ".jsx"],
-    mainFields: ["loader", "module", "main"],
+    extensions: [".web.js", ".mjs", ".js", ".json", ".web.jsx", ".jsx", ".css"],
+    // mainFields: ["module", "main"],
+    fallback: {
+      path: false,
+      fs: false,
+      events: false,
+      crypto: false,
+    },
     alias: {
       // Support React Native Web
       // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
       "react-native": "react-native-web",
+      'react/jsx-runtime': path.resolve(__dirname, 'node_modules/react/jsx-runtime.js'),
+      'core-js/stable/array/at': 'core-js/stable/array/at.js',
+      'core-js/stable/array/flat': 'core-js/stable/array/flat.js',
+      'core-js/stable/array/flat-map': 'core-js/stable/array/flat-map.js',
+      'core-js/stable/string/at': 'core-js/stable/string/at.js',
+      'core-js/stable/string/replace-all':
+        'core-js/stable/string/replace-all.js',
     },
     plugins: [
       // Prevents users from importing files from outside of src/ (or node_modules/).
@@ -103,7 +114,7 @@ module.exports = {
 
       // First, run the linter.
       // It's important to do this before Babel processes the JS.
-     /*  {
+      {
         test: /\.(js|jsx|mjs)$/,
         enforce: "pre",
         use: [
@@ -115,7 +126,7 @@ module.exports = {
             loader: "eslint-loader",
           },
         ],
-      }, */
+      },
       {
         // "oneOf" will traverse all following loaders until one will
         // match the requirements. When no loader matches it will fall
@@ -140,14 +151,13 @@ module.exports = {
             options: {
               presets: [
                 "@babel/preset-env",
-                "@babel/preset-typescript",
-                "@babel/preset-react",
+                "@babel/preset-react"
               ],
-              plugins: [
-                "@babel/plugin-transform-optional-chaining",
-                "@babel/plugin-transform-nullish-coalescing-operator",
-                "@babel/plugin-proposal-class-properties",
-              ],
+              // plugins: [
+              //   "@babel/plugin-transform-optional-chaining",
+              //   "@babel/plugin-transform-nullish-coalescing-operator",
+              //   "@babel/plugin-proposal-class-properties"
+              // ],
               // This is a feature of `babel-loader` for webpack (not Babel itself).
               // It enables caching results in ./node_modules/.cache/babel-loader/
               // directory for faster rebuilds.
@@ -162,8 +172,10 @@ module.exports = {
           {
             test: /\.css$/,
             use: [
-              "style-loader",
-              {
+              MiniCssExtractPlugin.loader,
+              "css-loader",
+              "postcss-loader",
+             /*  {
                 loader: "css-loader",
                 options: {
                   importLoaders: 1,
@@ -188,7 +200,7 @@ module.exports = {
                     }),
                   ],
                 },
-              },
+              }, */
             ],
           },
           // "file" loader makes sure those assets get served by WebpackDevServer.
@@ -214,17 +226,19 @@ module.exports = {
       // Make sure to add the new loader(s) before the "file" loader.
     ],
   },
+  target: "web",
   plugins: [
+    new webpack.ProgressPlugin(),
     // Makes some environment variables available in index.html.
     // The public URL is available as %PUBLIC_URL% in index.html, e.g.:
     // <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
     // In development, this will be an empty string.
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
-      inject: true,
-      template: "./index.html",
+      template: './index.html',
+      base: '/',
     }),
-    new InterpolateHtmlPlugin(HtmlWebpackPlugin),
+    // new InterpolateHtmlPlugin(HtmlWebpackPlugin),
     // Add module names to factory functions so they appear in browser profiler.
     // new webpack.NamedModulesPlugin(),
     // Makes some environment variables available to the JS code, for example:
@@ -234,32 +248,47 @@ module.exports = {
     // Watcher doesn't work well if you mistype casing in a path so we use
     // a plugin that prints an error when you attempt to do this.
     // See https://github.com/facebookincubator/create-react-app/issues/240
-    new CaseSensitivePathsPlugin(),
+    // new CaseSensitivePathsPlugin(),
     // If you require a missing module and then `npm install` it, you still have
     // to restart the development server for Webpack to discover it. This plugin
     // makes the discovery automatic so you don't have to restart.
     // See https://github.com/facebookincubator/create-react-app/issues/186
     new WatchMissingNodeModulesPlugin("node_modules"),
+    new MiniCssExtractPlugin({
+      filename: 'static/css/[name].[chunkhash:8].css',
+    }),
     // Moment.js is an extremely popular library that bundles large locale files
     // by default due to how Webpack interprets its code. This is a practical
     // solution that requires the user to opt into importing specific locales.
     // https://github.com/jmblog/how-to-optimize-momentjs-with-webpack
     // You can remove this if you don't use Moment.js:
-    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+    new webpack.IgnorePlugin({
+      resourceRegExp: /^\.\/locale$/,
+      contextRegExp: /moment$/,
+    }),
+    new webpack.DefinePlugin({
+      'process.env': `(${JSON.stringify(process.env)})`,
+    }),
   ],
   // Some libraries import Node modules but don't use them in the browser.
   // Tell Webpack to provide empty mocks for them so importing them works.
-  node: {
-    dgram: "empty",
-    fs: "empty",
-    net: "empty",
-    tls: "empty",
-    child_process: "empty",
-  },
+  // node: {
+  //   dgram: "empty",
+  //   fs: "empty",
+  //   net: "empty",
+  //   tls: "empty",
+  //   child_process: "empty",
+  // },
   // Turn off performance hints during development because we don't do any
   // splitting or minification in interest of speed. These warnings become
   // cumbersome.
   performance: {
     hints: false,
-  }
+  },
+  devServer: {
+    historyApiFallback: true,
+    open: true,
+    compress: true,
+    port: 4000,
+  },
 };
